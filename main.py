@@ -7,6 +7,9 @@ class NonValide(Exception) :
 def getsoup(url):
     page = requests.get(url).text
     soup = BeautifulSoup(page , "html.parser")
+    prix(soup)
+
+def prix(soup) :
     prix = soup.find("p" , class_="product-price")
     if prix :
         prix_text = prix.text.strip()  # Remove extra spaces
@@ -16,16 +19,11 @@ def getsoup(url):
         if prix_numeric < 10000 : 
             raise NonValide
 
-    
+
         print(f"le prix : {prix_text}")  # Print cleaned price
 
-    # print(soup.prettify())
-
-def prix(soup) :
-
-    pass
 
 
-getsoup("https://www.immo-entre-particuliers.com/annonce-lot-et-garonne-miramont-de-guyenne/409264-garage-garde-meuble")
+getsoup("https://www.immo-entre-particuliers.com/annonce-gard-nimes/409255-propriete-contemporaine-avec-ses-2-annexes-1ha-de-terrain-dans-la-pinede-et-vue-exceptionnelle")
 
 
