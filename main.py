@@ -8,12 +8,7 @@ def getsoup(url):
     page = requests.get(url).text
     soup = BeautifulSoup(page , "html.parser")
     
-    print(type(soup))
-    print(surface(soup))
-    print(nbrpieces(soup))
-    print(nbrchambres(soup))
-    print(nbrsdb(soup))
-    print(dpe(soup))
+   
     
 
 
@@ -27,7 +22,22 @@ def caract(soup , index) :
     return res[index][0]
 
 
+def information (soup):
+    prix(soup)
+    type(soup)
+    surface(soup)
+    nbrpieces(soup)
+    nbrchambres(soup)
+    nbrsdb(soup)
+    dpe(soup)
+    
+
+
+
 def type(soup) :
+    t = caract(soup , 0)
+    if ( t != "Maison" or t != "Appartement") :
+        raise NonValide
     return caract(soup , 0)
 
 def surface(soup) :
