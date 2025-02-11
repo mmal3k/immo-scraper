@@ -7,38 +7,56 @@ class NonValide(Exception) :
 def getsoup(url):
     page = requests.get(url).text
     soup = BeautifulSoup(page , "html.parser")
+
     
-   
-    
+    return soup
+
 
 
 def caract(soup , index) :
-    caract = soup.find("div" , class_="product-features")
-    caract = caract.find("ul").findAll("li")
+
+    div = soup.find("div" , class_="product-features")
+    ul =  div.find("ul")
     res = []
-    for i in caract :
-        res.append(i.find("span" , class_ = "fw-bold").text.split("\n"))
-    
+    if not ul :
+        
+        for i in range(16) :
+            res.append(["-"])
+        
+        return res
+    lis = ul.findAll("li")
+
+    for i in range(16) :
+    # for i in caract :
+        if i < len(lis) :
+            g = lis[i].find("span" , class_ = "fw-bold")
+            if not g :
+                res.append("-")
+                continue
+            res.append(g.text.split("\n"))
+        else :
+                res.append(["-"])
+
     return res[index][0]
 
 
-def information (soup):
-    prix(soup)
-    type(soup)
-    surface(soup)
-    nbrpieces(soup)
-    nbrchambres(soup)
-    nbrsdb(soup)
-    dpe(soup)
-    
+def informations (soup):
+    res = f"{ville(soup)},{type(soup)},{surface(soup)},{nbrpieces(soup)},{nbrchambres(soup)},{nbrsdb(soup)},{dpe(soup)},{prix(soup)}"
+    print(res)
+    return res
 
 
 
 def type(soup) :
     t = caract(soup , 0)
-    if ( t != "Maison" or t != "Appartement") :
+    if ( t != "Maison" and t != "Appartement") :
         raise NonValide
     return caract(soup , 0)
+
+def ville(soup):
+    ville = soup.find("h2" , class_="mt-0")
+    index = ville.text.rfind(',')
+    return ville.text[index+1:].strip()
 
 def surface(soup) :
     surface = caract(soup , 1).replace("m²" ,"")
@@ -66,14 +84,63 @@ def prix(soup) :
         prix_text = prix_text.replace("€", "").strip()
         prix_numeric = int("".join(prix_text.split()))
         
-        if prix_numeric < 10000 : 
+        res = prix_text.replace(" ","")
+        if prix_numeric < 10000 or res is None : 
             raise NonValide
 
+        return res
+    
 
-        print(f"le prix : {prix_text}")  # Print cleaned price
+
+def annonceScraper() :
+    links = []
+    i = 1
+    while True :
+        
+        url = f"https://www.immo-entre-particuliers.com/annonces/france-ile-de-france/vente/{i}"
+        page = requests.get(url).text
+        soup = BeautifulSoup(page , "html.parser")
+        # si on depasse la derniere page on sort de la boucle 
+        error = soup.find("body" , {"id":"error"})
+        if error : 
+            break
+        
+        
+        
+        for link in soup.findAll("div" , class_ = "product-details") :
+            newUrl = f"https://www.immo-entre-particuliers.com{link.find("a")["href"]}"
+            links.append(newUrl)
+        
+        i+= 1
+    
+    res = []
+    i = 0
+    for annonce in links :
+        
+        try :
+            soup = getsoup(annonce)
+            text = informations(soup)
+            res.append(text)
+        except NonValide :
+            print("annonce non valide")
+        i += 1
+        if i%15 == 0 :
+            pass
+            print(f"------------------- {i/15} -------------------------")
+          
+    
+    
+    for valid in res :
+        print(valid)
+    # print(f"size valide  : {len(res)}")
+    
+    
 
 
+# soup = getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-1er/408928-recherche-acheter-terrain-a-partir-de-2500m")
+annonceScraper()
 
-getsoup("https://www.immo-entre-particuliers.com/annonce-gard-nimes/409255-propriete-contemporaine-avec-ses-2-annexes-1ha-de-terrain-dans-la-pinede-et-vue-exceptionnelle")
 
+# print(dpe(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-15eme/406068-echange-appartement-f3-paris-15-contre-f3-ou-f4-dans-le-92-courbevoie-suresnes-puteaux")))
+# print(dpe(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-1er/408928-recherche-acheter-terrain-a-partir-de-2500m")))
 
