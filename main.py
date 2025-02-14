@@ -85,10 +85,12 @@ def prix(soup) :
         prix_numeric = int("".join(prix_text.split()))
         
         res = prix_text.replace(" ","")
-        if prix_numeric < 10000 or res is None : 
+        
+        if prix_numeric < 10000 : 
             raise NonValide
 
         return res
+    else: raise NonValide
     
 
 
@@ -132,7 +134,7 @@ def annonceScraper() :
     
     for valid in res :
         print(valid)
-    # print(f"size valide  : {len(res)}")
+    print(f"size valide  : {len(res)}")
     
     
 
