@@ -1,11 +1,1 @@
-Mantes-la-Jolie,Appartement,30 ,1,1,-,B,134500
-La Ville-du-Bois,Maison,122 ,5,3,1,D,270000
-Limeil-Brévannes,Maison,121 ,5,3,1,E,455000
-Morsang-sur-Orge,Maison,118 ,6,3,2,O,385000
-Bussy-Saint-Georges,Appartement,28 ,1,-,1,D,165300
-Paris 10ème,Appartement,19 ,1,-,1,B,212000
-Neuilly-sur-Marne,Appartement,90 ,4,3,1,C,275000
-La Garenne-Colombes,Appartement,77 ,2,1,-,F,500000
-Mennecy,Maison,161 ,7,5,2,E,529000
-Sartrouville,Maison,125 ,6,4,1,D,595000
-Paris 14ème,Appartement,31 ,1,-,1,V,393400
+Ville,Type,Surface,NbrPieces,NbrChambres,NbrSdb,DPE,Prix

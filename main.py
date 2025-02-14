@@ -13,31 +13,21 @@ def getsoup(url):
 
 
 
-def caract(soup , index) :
+def caract(soup ,s) :
 
     div = soup.find("div" , class_="product-features")
     ul =  div.find("ul")
-    res = []
     if not ul :
-        
-        for i in range(16) :
-            res.append(["-"])
-        
-        return res
+        raise NonValide
     lis = ul.findAll("li")
 
-    for i in range(16) :
-    # for i in caract :
-        if i < len(lis) :
-            g = lis[i].find("span" , class_ = "fw-bold")
-            if not g :
-                res.append("-")
-                continue
-            res.append(g.text.split("\n"))
-        else :
-                res.append(["-"])
-
-    return res[index][0]
+    # for i in range(16) :
+    for i in lis :
+    # if i < len(lis) :
+        g = i.find("span" , class_ = "text-muted").text
+        if s in g :
+            return i.find("span" , class_ = "fw-bold").text
+    return "-"
 
 
 def informations (soup):
@@ -47,10 +37,10 @@ def informations (soup):
 
 
 def type(soup) :
-    t = caract(soup , 0)
+    t = caract(soup , "Type")
     if ( t != "Maison" and t != "Appartement") :
         raise NonValide
-    return caract(soup , 0)
+    return t
 
 def ville(soup):
     ville = soup.find("h2" , class_="mt-0")
@@ -58,23 +48,23 @@ def ville(soup):
     return ville.text[index+1:].strip()
 
 def surface(soup) :
-    surface = caract(soup , 1).replace("m²" ,"")
-    return surface
+    surface = caract(soup , "Surface")
+    return surface.replace("m²" ,"")
 
     
 def nbrpieces(soup) :
-    return caract(soup , 3)
+    return caract(soup , "Nb. de pièces")
     
 
 def nbrchambres(soup) :
-    return caract(soup , 4)
+    return caract(soup , "Nb. de chambres")
 
 def nbrsdb(soup) :
-    return caract(soup , 5)
+    return caract(soup , "Nb. de sales de bains")
 
 def dpe(soup) :
-    dpe = caract(soup , 13)[0]
-    return dpe
+    dpe = caract(soup , "Consommation d'énergie (DPE)")
+    return dpe[0]
 
 def prix(soup) :
     prix = soup.find("p" , class_="product-price")
@@ -111,12 +101,11 @@ def annonceScraper() :
         for link in soup.findAll("div" , class_ = "product-details") :
             newUrl = 'https://www.immo-entre-particuliers.com'+link.find("a")["href"]
             links.append(newUrl)
-    
+        
         i+= 1
     
-    res = []
     i = 0
-    fd = open('./result.csv','a')
+    fd = open('./result.csv','a', encoding='utf-8')
     for annonce in links :
         
         try :
@@ -132,17 +121,12 @@ def annonceScraper() :
           
     
     
-    for valid in res :
-        print(valid)
-    print(f"size valide  : {len(res)}")
-    
-    
 
 
 # soup = getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-1er/408928-recherche-acheter-terrain-a-partir-de-2500m")
 annonceScraper()
 
 
-# print(dpe(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-15eme/406068-echange-appartement-f3-paris-15-contre-f3-ou-f4-dans-le-92-courbevoie-suresnes-puteaux")))
+# print(informations(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-15eme/406068-echange-appartement-f3-paris-15-contre-f3-ou-f4-dans-le-92-courbevoie-suresnes-puteaux")))
 # print(dpe(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-1er/408928-recherche-acheter-terrain-a-partir-de-2500m")))
 
