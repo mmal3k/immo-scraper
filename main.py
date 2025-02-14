@@ -42,7 +42,6 @@ def caract(soup , index) :
 
 def informations (soup):
     res = f"{ville(soup)},{type(soup)},{surface(soup)},{nbrpieces(soup)},{nbrchambres(soup)},{nbrsdb(soup)},{dpe(soup)},{prix(soup)}"
-    print(res)
     return res
 
 
@@ -110,19 +109,20 @@ def annonceScraper() :
         
         
         for link in soup.findAll("div" , class_ = "product-details") :
-            newUrl = f"https://www.immo-entre-particuliers.com{link.find("a")["href"]}"
+            newUrl = 'https://www.immo-entre-particuliers.com'+link.find("a")["href"]
             links.append(newUrl)
-        
+    
         i+= 1
     
     res = []
     i = 0
+    fd = open('./result.csv','a')
     for annonce in links :
         
         try :
             soup = getsoup(annonce)
             text = informations(soup)
-            res.append(text)
+            fd.write(text+'\n')
         except NonValide :
             print("annonce non valide")
         i += 1
