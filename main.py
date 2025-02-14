@@ -1,132 +1,103 @@
 from bs4 import BeautifulSoup
 import requests
 
-class NonValide(Exception) :
+class NonValide(Exception):
     pass
 
 def getsoup(url):
-    page = requests.get(url).text
-    soup = BeautifulSoup(page , "html.parser")
+    response = requests.get(url)
+    return BeautifulSoup(response.text, "html.parser")
 
-    
-    return soup
-
-
-
-def caract(soup ,s) :
-
-    div = soup.find("div" , class_="product-features")
-    ul =  div.find("ul")
-    if not ul :
-        raise NonValide
-    lis = ul.findAll("li")
-
-    # for i in range(16) :
-    for i in lis :
-    # if i < len(lis) :
-        g = i.find("span" , class_ = "text-muted").text
-        if s in g :
-            return i.find("span" , class_ = "fw-bold").text
+def caracteristique(soupe, s):
+    div = soupe.find("div", class_="product-features")
+    ul = div.find("ul")
+    if not ul : 
+        raise NonValide("Le type n'est pas valide")
+    for li in ul.find_all("li"):
+        label = li.find("span", class_="text-muted")
+        if label and s in label.text:
+            valeur = li.find("span", class_="fw-bold")
+            return valeur.text if valeur else "-"
     return "-"
 
+def informations(soupe):
+    return f"{ville(soupe)},{type(soupe)},{surface(soupe)},{nbrpieces(soupe)},{nbrchambres(soupe)},{nbrsdb(soupe)},{dpe(soupe)},{prix(soupe)}"
 
-def informations (soup):
-    res = f"{ville(soup)},{type(soup)},{surface(soup)},{nbrpieces(soup)},{nbrchambres(soup)},{nbrsdb(soup)},{dpe(soup)},{prix(soup)}"
-    return res
-
-
-
-def type(soup) :
-    t = caract(soup , "Type")
-    if ( t != "Maison" and t != "Appartement") :
-        raise NonValide
+def type(soupe):
+    t = caracteristique(soupe, "Type")
+    if t not in ["Maison", "Appartement"]:
+        raise NonValide("Le type n'est pas valide.")
     return t
 
-def ville(soup):
-    ville = soup.find("h2" , class_="mt-0")
-    index = ville.text.rfind(',')
-    return ville.text[index+1:].strip()
+def ville(soupe):
+    ville_tag = soupe.find("h2", class_="mt-0")
+    if not ville_tag :
+        return "-"
+    index = ville_tag.text.rfind(',')
+    return ville_tag.text[index+1:].strip()
 
-def surface(soup) :
-    surface = caract(soup , "Surface")
-    return surface.replace("m²" ,"")
+def surface(soupe):
+    surface = caracteristique(soupe, "Surface")
+    return surface.replace("m²", "")
 
-    
-def nbrpieces(soup) :
-    return caract(soup , "Nb. de pièces")
-    
+def nbrpieces(soupe):
+    return caracteristique(soupe, "Nb. de pièces")
 
-def nbrchambres(soup) :
-    return caract(soup , "Nb. de chambres")
+def nbrchambres(soupe):
+    return caracteristique(soupe, "Nb. de chambres")
 
-def nbrsdb(soup) :
-    return caract(soup , "Nb. de sales de bains")
+def nbrsdb(soupe):
+    return caracteristique(soupe, "Nb. de sales de bains")
 
-def dpe(soup) :
-    dpe = caract(soup , "Consommation d'énergie (DPE)")
+def dpe(soupe):
+    dpe = caracteristique(soupe, "Consommation d'énergie (DPE)")
     return dpe[0]
 
-def prix(soup) :
-    prix = soup.find("p" , class_="product-price")
-    if prix :
-        prix_text = prix.text.strip()  # Remove extra spaces
-        prix_text = prix_text.replace("€", "").strip()
-        prix_numeric = int("".join(prix_text.split()))
-        
-        res = prix_text.replace(" ","")
-        
-        if prix_numeric < 10000 : 
-            raise NonValide
-
-        return res
-    else: raise NonValide
+def prix(soupe):
+    prix_tag = soupe.find("p", class_="product-price")
+    if not prix_tag:
+        raise NonValide("Information sur le prix manquante.")
     
+    prix_text = prix_tag.text.strip().replace("€", "").strip()
+    prix_numeric = int("".join(prix_text.split()))
+    
+    if prix_numeric < 10000:
+        raise NonValide("Prix en dessous de 10 000€.")
+    
+    return prix_text.replace(" ", "")
 
+def annonces_scraper():
+    liens = []
+    numero_page = 1
 
-def annonceScraper() :
-    links = []
-    i = 1
-    while True :
+    while True:
+        url = f"https://www.immo-entre-particuliers.com/annonces/france-ile-de-france/vente/{numero_page}"
+        soupe = getsoup(url)
         
-        url = f"https://www.immo-entre-particuliers.com/annonces/france-ile-de-france/vente/{i}"
-        page = requests.get(url).text
-        soup = BeautifulSoup(page , "html.parser")
-        # si on depasse la derniere page on sort de la boucle 
-        error = soup.find("body" , {"id":"error"})
-        if error : 
+        # Arrêter si nous atteignons une page avec un indicateur d'erreur
+        if soupe.find("body", {"id": "error"}):
             break
         
+        for produit in soupe.find_all("div", class_="product-details"):
+            lien_tag = produit.find("a")
+            if lien_tag and lien_tag.get("href"):
+                nouvelle_url = 'https://www.immo-entre-particuliers.com' + lien_tag["href"]
+                liens.append(nouvelle_url)
         
-        
-        for link in soup.findAll("div" , class_ = "product-details") :
-            newUrl = 'https://www.immo-entre-particuliers.com'+link.find("a")["href"]
-            links.append(newUrl)
-        
-        i+= 1
+        numero_page += 1
     
-    i = 0
-    fd = open('./result.csv','a', encoding='utf-8')
-    for annonce in links :
-        
-        try :
-            soup = getsoup(annonce)
-            text = informations(soup)
-            fd.write(text+'\n')
-        except NonValide :
-            print("annonce non valide")
-        i += 1
-        if i%15 == 0 :
-            pass
-            print(f"------------------- {i/15} -------------------------")
-          
-    
-    
+    fd = open('./result.csv', 'w', encoding='utf-8')
+    fd.write("Ville,Type,Surface,NbPieces,NbChambres,NbSdb,DPE,Prix\n")
+    for index, annonce in enumerate(liens, start=1):
+        try:
+            soupe = getsoup(annonce)
+            info_text = informations(soupe)
+            fd.write(info_text + '\n')
+        except NonValide as e:
+            print(f"Annonce non valide : {e}")
+        if index % 15 == 0:
+            print(f"------------------- {index // 15} -------------------------")
+    fd.close()
 
 
-# soup = getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-1er/408928-recherche-acheter-terrain-a-partir-de-2500m")
-annonceScraper()
-
-
-# print(informations(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-15eme/406068-echange-appartement-f3-paris-15-contre-f3-ou-f4-dans-le-92-courbevoie-suresnes-puteaux")))
-# print(dpe(getsoup("https://www.immo-entre-particuliers.com/annonce-paris-paris-1er/408928-recherche-acheter-terrain-a-partir-de-2500m")))
-
+annonces_scraper()
