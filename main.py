@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
+import pandas as pd
+import numpy as np
 
 class NonValide(Exception):
     pass
@@ -100,4 +102,98 @@ def annonces_scraper():
     fd.close()
 
 
-annonces_scraper()
+# annonces_scraper()
+
+annonces = pd.read_csv('./result.csv')
+
+annonces["DPE"].replace(to_replace="V", value="Vierge" , inplace=True)
+annonces["DPE"].replace(to_replace="-", value="Vierge" , inplace=True)
+
+
+# Handle numeric columns
+numeric_columns = ['Surface', 'NbPieces', 'NbChambres', 'NbSdb']
+for column in numeric_columns:
+    # Convert to numeric, invalid values become NaN
+    annonces[column] = pd.to_numeric(annonces[column], errors='coerce')
+    # Calculate mean and convert to integer
+    column_mean = int(annonces[column].mean())
+    # Fill NaN and convert to integers
+    annonces[column] = annonces[column].fillna(column_mean).astype(int)
+
+
+# Create dummy variables for DPE and Type and update annonces
+annonces = pd.concat([
+    annonces.drop(['DPE', 'Type'], axis=1),
+    pd.get_dummies(annonces['DPE'], dtype=int, prefix='DPE'),
+    pd.get_dummies(annonces['Type'], dtype=int, prefix='Type')
+], axis=1)
+
+
+# Set display options to show all rows and columns
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
+ 
+# print(annonces)
+
+
+
+villes = pd.read_csv('./cities.csv')
+
+
+
+
+
+
+# ... existing code ...
+
+def standardize_city_name(city):
+    # Convert to lowercase
+    city = city.lower()
+    
+    # Handle Paris arrondissements
+    # if 'paris' in city:
+    #     # Extract arrondissement number
+    #     if 'ème' in city:
+    #         arr = city.split('ème')[0].split()[-1]
+    #     elif 'er' in city:
+    #         arr = city.split('er')[0].split()[-1]
+    #     else:
+    #         arr = ''.join(filter(str.isdigit, city))
+            
+    #     # If we found an arrondissement number
+    #     if arr:
+    #         # Pad single digit arrondissements with leading zero
+    #         try:
+    #             arr = str(int(arr)).zfill(2)
+    #             return f"paris {arr}"
+    #         except ValueError:
+    #             return "paris"
+    #     return "paris"
+    
+    # Handle other cities (existing code)
+    city = city.replace('é', 'e').replace('è', 'e').replace('ê', 'e')\
+              .replace('à', 'a').replace('â', 'a')\
+              .replace('ô', 'o').replace('ö', 'o')\
+              .replace('ù', 'u').replace('û', 'u')\
+              .replace('ï', 'i').replace('î', 'i')\
+              .replace('ç', 'c').replace('ÿ', 'y')
+    
+    city = city.replace("'", "").replace("-", "").replace(" ", "")
+    
+    return city
+
+# Read and standardize cities DataFrame
+
+villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
+
+# print(villes)
+
+# Standardize annonces DataFrame
+annonces['Ville'] = annonces['Ville'].str.strip().apply(standardize_city_name)
+
+
+
+
+
