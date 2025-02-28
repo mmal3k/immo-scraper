@@ -143,6 +143,12 @@ villes = pd.read_csv('./cities.csv')
 
 
 
+villes.loc[villes['label'] == 'paris', 'label'] = villes.loc[villes['label'] == 'paris', 'city_code']
+
+
+# for index, row in villes.iterrows() : 
+#     if "paris" in row['label'] :
+#         print(row['label'])
 
 
 
@@ -153,24 +159,12 @@ def standardize_city_name(city):
     city = city.lower()
     
     # Handle Paris arrondissements
-    # if 'paris' in city:
-    #     # Extract arrondissement number
-    #     if 'ème' in city:
-    #         arr = city.split('ème')[0].split()[-1]
-    #     elif 'er' in city:
-    #         arr = city.split('er')[0].split()[-1]
-    #     else:
-    #         arr = ''.join(filter(str.isdigit, city))
-            
-    #     # If we found an arrondissement number
-    #     if arr:
-    #         # Pad single digit arrondissements with leading zero
-    #         try:
-    #             arr = str(int(arr)).zfill(2)
-    #             return f"paris {arr}"
-    #         except ValueError:
-    #             return "paris"
-    #     return "paris"
+    if 'paris' in city:
+        if 'ème' in city or "er" in city : 
+            number = ''.join([char for char in city if char.isdigit()])
+            if number:
+                city = f"paris{number.zfill(2)}"
+        
     
     # Handle other cities (existing code)
     city = city.replace('é', 'e').replace('è', 'e').replace('ê', 'e')\
@@ -184,7 +178,7 @@ def standardize_city_name(city):
     
     return city
 
-# Read and standardize cities DataFrame
+
 
 villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
 
@@ -193,7 +187,9 @@ villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
 # Standardize annonces DataFrame
 annonces['Ville'] = annonces['Ville'].str.strip().apply(standardize_city_name)
 
-
+missing_in_villes = set(annonces['Ville'].unique()) - set(villes['label'].unique())
+print("\nCities in annonces but not in villes:")
+print(sorted(missing_in_villes))
 
 
 
