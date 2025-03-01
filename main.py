@@ -141,6 +141,8 @@ pd.set_option('display.max_colwidth', None)
 
 villes = pd.read_csv('./cities.csv')
 
+villes = villes[villes['region_name']=='île-de-france']
+
 
 
 villes.loc[villes['label'] == 'paris', 'label'] = villes.loc[villes['label'] == 'paris', 'city_code']
@@ -157,6 +159,10 @@ villes.loc[villes['label'] == 'paris', 'label'] = villes.loc[villes['label'] == 
 def standardize_city_name(city):
     # Convert to lowercase
     city = city.lower()
+    if 'sainte' in city:
+        city = city.replace('sainte','ste')
+    elif 'saint' in city:
+        city = city.replace('saint','st')
     
     # Handle Paris arrondissements
     if 'paris' in city:
@@ -188,8 +194,10 @@ villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
 annonces['Ville'] = annonces['Ville'].str.strip().apply(standardize_city_name)
 
 missing_in_villes = set(annonces['Ville'].unique()) - set(villes['label'].unique())
-print("\nCities in annonces but not in villes:")
-print(sorted(missing_in_villes))
+# print("\nCities in annonces but not in villes:")
+# print(sorted(missing_in_villes))
 
 
+merged_df = annonces.merge(villes[['label', 'latitude', 'longitude']], left_on='Ville', right_on='label', how='left')
 
+print(merged_df)
