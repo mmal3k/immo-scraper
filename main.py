@@ -197,7 +197,35 @@ missing_in_villes = set(annonces['Ville'].unique()) - set(villes['label'].unique
 # print("\nCities in annonces but not in villes:")
 # print(sorted(missing_in_villes))
 
+# First standardize both DataFrames as before
+villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
+annonces['Ville'] = annonces['Ville'].str.strip().apply(standardize_city_name)
 
+# Handle specific city matches with if statements
+def match_cities(city):
+    if city in ['evry', 'courcouronnes']:
+        return 'evrycourcouronnes'
+    
+    elif city in "lechesnay":
+        return "lechesnayrocquencourt"
+    
+    elif city in "eragny":
+        return "eragnysuroise"
+    elif city in "perigny":
+        return "perignysuryerres"
+    elif city in "sts":
+        return "beautheilsts"
+    elif city in "franconville":
+        return "franconvillelagarenne"
+    
+    return city
+
+# Apply the matching
+annonces['Ville'] = annonces['Ville'].apply(match_cities)
+
+# Merge using the matched cities
 merged_df = annonces.merge(villes[['label', 'latitude', 'longitude']], left_on='Ville', right_on='label', how='left')
+
+merged_df.drop(columns=['Ville','label'], inplace=True)
 
 print(merged_df)
