@@ -222,7 +222,7 @@ def match_cities(city):
 
 # Apply the matching
 annonces['Ville'] = annonces['Ville'].apply(match_cities)
-
+villes = villes.drop_duplicates(subset=['label'])
 # Merge using the matched cities
 merged_df = annonces.merge(villes[['label', 'latitude', 'longitude']], left_on='Ville', right_on='label', how='left')
 
