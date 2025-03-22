@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 import numpy as np
 
+
+# Premier Jalon  : ------------------------------------------------------------
 class NonValide(Exception):
     pass
 
@@ -104,24 +106,26 @@ def annonces_scraper():
 
 # annonces_scraper()
 
+
+
+
+# Deuxième Jalon  : ------------------------------------------------------------
+
 annonces = pd.read_csv('./result.csv')
 
-annonces["DPE"].replace(to_replace="V", value="Vierge" , inplace=True)
-annonces["DPE"].replace(to_replace="-", value="Vierge" , inplace=True)
+annonces["DPE"] = annonces["DPE"].replace(to_replace="V", value="Vierge")
+annonces["DPE"] = annonces["DPE"].replace(to_replace="-", value="Vierge")
 
 
-# Handle numeric columns
+
 numeric_columns = ['Surface', 'NbPieces', 'NbChambres', 'NbSdb']
 for column in numeric_columns:
-    # Convert to numeric, invalid values become NaN
     annonces[column] = pd.to_numeric(annonces[column], errors='coerce')
-    # Calculate mean and convert to integer
     column_mean = int(annonces[column].mean())
-    # Fill NaN and convert to integers
     annonces[column] = annonces[column].fillna(column_mean).astype(int)
 
 
-# Create dummy variables for DPE and Type and update annonces
+
 annonces = pd.concat([
     annonces.drop(['DPE', 'Type'], axis=1),
     pd.get_dummies(annonces['DPE'], dtype=int, prefix='DPE'),
@@ -129,42 +133,28 @@ annonces = pd.concat([
 ], axis=1)
 
 
-# Set display options to show all rows and columns
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
- 
-# print(annonces)
-
 
 
 villes = pd.read_csv('./cities.csv')
 
 villes = villes[villes['region_name']=='île-de-france']
 
-
-
+# Ajoute dans le label l'arrondissement pour Paris
 villes.loc[villes['label'] == 'paris', 'label'] = villes.loc[villes['label'] == 'paris', 'city_code']
 
 
-# for index, row in villes.iterrows() : 
-#     if "paris" in row['label'] :
-#         print(row['label'])
-
-
-
-# ... existing code ...
-
+# Standardise le label dans cities.csv et la ville dans result.csv
 def standardize_city_name(city):
-    # Convert to lowercase
     city = city.lower()
     if 'sainte' in city:
         city = city.replace('sainte','ste')
     elif 'saint' in city:
         city = city.replace('saint','st')
     
-    # Handle Paris arrondissements
     if 'paris' in city:
         if 'ème' in city or "er" in city : 
             number = ''.join([char for char in city if char.isdigit()])
@@ -172,7 +162,6 @@ def standardize_city_name(city):
                 city = f"paris{number.zfill(2)}"
         
     
-    # Handle other cities (existing code)
     city = city.replace('é', 'e').replace('è', 'e').replace('ê', 'e')\
               .replace('à', 'a').replace('â', 'a')\
               .replace('ô', 'o').replace('ö', 'o')\
@@ -186,29 +175,16 @@ def standardize_city_name(city):
 
 
 
-villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
+villes['label'] = villes['label'].apply(standardize_city_name)
 
-# print(villes)
+annonces['Ville'] = annonces['Ville'].apply(standardize_city_name)
 
-# Standardize annonces DataFrame
-annonces['Ville'] = annonces['Ville'].str.strip().apply(standardize_city_name)
 
-missing_in_villes = set(annonces['Ville'].unique()) - set(villes['label'].unique())
-# print("\nCities in annonces but not in villes:")
-# print(sorted(missing_in_villes))
-
-# First standardize both DataFrames as before
-villes['label'] = villes['label'].str.strip().apply(standardize_city_name)
-annonces['Ville'] = annonces['Ville'].str.strip().apply(standardize_city_name)
-
-# Handle specific city matches with if statements
 def match_cities(city):
     if city in ['evry', 'courcouronnes']:
         return 'evrycourcouronnes'
-    
     elif city in "lechesnay":
         return "lechesnayrocquencourt"
-    
     elif city in "eragny":
         return "eragnysuroise"
     elif city in "perigny":
@@ -217,15 +193,15 @@ def match_cities(city):
         return "beautheilsts"
     elif city in "franconville":
         return "franconvillelagarenne"
-    
     return city
 
-# Apply the matching
+
 annonces['Ville'] = annonces['Ville'].apply(match_cities)
+
 villes = villes.drop_duplicates(subset=['label'])
-# Merge using the matched cities
+
 merged_df = annonces.merge(villes[['label', 'latitude', 'longitude']], left_on='Ville', right_on='label', how='left')
 
-merged_df.drop(columns=['Ville','label'], inplace=True)
+merged_df = merged_df.drop(columns=['Ville','label'])
 
 print(merged_df)
