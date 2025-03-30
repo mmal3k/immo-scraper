@@ -2,6 +2,16 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score 
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 
 # Premier Jalon  : ------------------------------------------------------------
@@ -205,3 +215,229 @@ merged_df = annonces.merge(villes[['label', 'latitude', 'longitude']], left_on='
 merged_df = merged_df.drop(columns=['Ville','label'])
 
 print(merged_df)
+
+
+
+
+# -------- troisieme Jalon --------------
+
+data = merged_df.loc[:,merged_df.columns != "Prix"]
+target = merged_df["Prix"]
+X_train, X_test, y_train, y_test = train_test_split(data , target, train_size=0.75, random_state=49)
+
+
+# premier modele : Regression lineaire
+
+model = LinearRegression()
+model.fit(X_train , y_train)
+print(f"LR avant le pretraitement : {r2_score(y_test ,model.predict(X_test))}")
+
+# LR normalization
+
+model_n = make_pipeline(MinMaxScaler() , LinearRegression())
+model_n.fit(X_train , y_train)
+print(f"LR normalization : {r2_score(y_test , model_n.predict(X_test))}")
+
+# LR standardisation
+
+model_s = make_pipeline(StandardScaler() , LinearRegression())
+model_s.fit(X_train , y_train)
+print(f"LR standardistation : {r2_score(y_test , model_s.predict(X_test))}")
+
+print("-------------------")
+
+# question 18 
+
+#  ------------------------------------------------
+# |     Méthode        |            r2             |
+#  ------------------------------------------------
+# |       LR           | 0.22800802636218875       |
+#  ------------------------------------------------
+# | Normalization+LR   | 0.22800802636218875       |
+#  ------------------------------------------------
+# | Standardisation+LR | 0.22775639702834605       |
+#  ------------------------------------------------
+
+# Question : Constatez-vous une amélioration des prédictions due au pré-traitement
+# pour ce jeu de données et cette méthode ?
+
+# Reponse : non il n y a pas eu d'amelioration
+
+
+# deuxieme modele : Arbre de decision
+
+for i in [4,6,8,10] :
+    # 2 eme modele
+    model_tr = DecisionTreeRegressor(max_depth=i)
+    model_tr.fit(X_train , y_train)
+    print(f"Decision Tree Regressor , max depth {i} : {r2_score(y_test , model_tr.predict(X_test))}")
+
+    # normalization 
+    model_nt = make_pipeline(MinMaxScaler() ,DecisionTreeRegressor(max_depth=i))
+    model_nt.fit(X_train , y_train)
+    print(f"Decision Tree Regressor normalization , max depth {i}: {r2_score(y_test , model_nt.predict(X_test))}")
+
+
+    # standardisation
+    model_st = make_pipeline(StandardScaler() , DecisionTreeRegressor(max_depth=i))
+    model_st.fit(X_train , y_train)
+    print(f"Decision Tree Regressor standardistation , max depth {i} : {r2_score(y_test , model_st.predict(X_test))}")
+    
+    print(f"------------------------------")
+
+
+# Question : Constatez-vous une amélioration significative suite au pré-traitement ? Les scores obtenus sontils satisfaisants ?
+# Reponse : non il n y a pas eu d'amelioration - Les scores obtenus ne sont pas satisfaisants
+
+# question 21
+
+#  ------------------------------------------------
+# |     Méthode        |            r2             |
+#  ------------------------------------------------
+# |       AD           | 0.15504606164146695       |
+#  ------------------------------------------------
+# | Normalization+AD   | 0.09760326785586004       |
+#  ------------------------------------------------
+# | Standardisation+AD | -2.0659502144072106       |
+#  ------------------------------------------------
+
+# troisieme modele : KNN Regressor
+
+model_knn = KNeighborsRegressor(n_neighbors=4)
+model_knn.fit(X_train , y_train)
+print(f"KNeighbors Regression , n_neighbors 4 : {r2_score(y_test , model_knn.predict(X_test))}")
+
+# normalization 
+
+model_knn_n = make_pipeline(MinMaxScaler() ,KNeighborsRegressor(n_neighbors=4))
+model_knn_n.fit(X_train , y_train)
+print(f"normalization KNN , n_neighbors 4 : {r2_score(y_test , model_knn_n.predict(X_test))}")
+
+
+# standardisation
+model_knn_s = make_pipeline(StandardScaler() , KNeighborsRegressor(n_neighbors=4))
+model_knn_s.fit(X_train , y_train)
+print(f"standardistation KNN , n_neighbors 4 : {r2_score(y_test , model_knn_s.predict(X_test))}")
+
+print(f"------------------------------")
+
+# Constatez-vous une amélioration significative suite au pré-traitement ? 
+# Reponse : non il n y a pas eu d'amelioration
+
+# Les scores obtenus sont ils satisfaisants ?
+# Reponse : Les scores obtenus ne sont pas satisfaisants
+
+
+model_knn = KNeighborsRegressor(n_neighbors=5)
+model_knn.fit(X_train , y_train)
+print(f"KNeighbors Regression , n_neighbors 5 : {r2_score(y_test , model_knn.predict(X_test))}")
+
+# normalization 
+
+model_knn_n = make_pipeline(MinMaxScaler() ,KNeighborsRegressor(n_neighbors=5))
+model_knn_n.fit(X_train , y_train)
+print(f"normalization KN , n_neighbors 5 : {r2_score(y_test , model_knn_n.predict(X_test))}")
+
+
+# standardisation
+model_knn_s = make_pipeline(StandardScaler() , KNeighborsRegressor(n_neighbors=5))
+model_knn_s.fit(X_train , y_train)
+print(f"standardistation KN , n_neighbors 5 : {r2_score(y_test , model_knn_s.predict(X_test))}")
+
+print(f"------------------------------")
+
+# L’augmentation du nombre de voisins considérés permet-elle de meilleurs résultats ? 
+# Reponse : non
+
+
+# question 22
+
+#  ------------------------------------------------
+# |     Méthode        |            r2             |
+#  ------------------------------------------------
+# |       KNN          | 0.04157529888778089       |
+#  ------------------------------------------------
+# | Normalization+KNN  | 0.0188993944242124        |
+#  ------------------------------------------------
+# | Standardisation+KNN| 0.18494745844603222       |
+#  ------------------------------------------------
+
+# question 23
+
+#  ------------------------------------------------
+# |     Méthode        |            r2             |
+#  ------------------------------------------------
+# |         LR         | 0.22800802636218875       |
+#  ------------------------------------------------
+# |         AD         | 0.15504606164146695       |
+#  ------------------------------------------------
+# |         KNN        | 0.04157529888778089       |
+#  ------------------------------------------------
+
+# Question : Que constatez-vous ?
+# Reponse : Les scores sont globalement faibles, indiquant que les modèles peinent à bien prédire.
+# La régression linéaire (0.228) s'en sort mieux que l'arbre de décision (0.155) et KNN (0.041), mais reste limitée.
+
+# Visualisation des résultats
+plt.figure(figsize=(8, 8))
+plt.scatter(y_test, model.predict(X_test), alpha=0.5, label='Prédictions')
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linestyle='--', label='Diagonale parfaite')
+plt.xlabel("Valeurs réelles (y_test)")
+plt.ylabel("Estimations (Prédictions)")
+plt.title("Graphique des estimations vs valeurs réelles")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print(f"------------------------------")
+# Question : Que constatez-vous ? Pensezvous que le jeu de données est suffisant pour construire un modèle d’apprentissage précis ?
+
+# Reponse :
+# On remarque que les prédictions (points bleus) sont souvent en dessous de la diagonale parfaite (ligne rouge), ce qui indique une sous-estimation des valeurs réelles.
+# La dispersion des points est assez large, ce qui suggère un manque de précision dans les prédictions du modèle.
+
+# indiquant que le jeu de données est probablement insuffisant ou inadapté pour un modèle précis.
+
+
+# PCA : 
+
+pca = PCA(n_components=2)
+pca.fit(X_train)
+X_train_pca= pca.transform(X_train)
+X_test_pca = pca.transform(X_test)
+
+# Question :  La modélisation avec 2 composantes principales
+# est-elle satisfaisante pour ce jeu de données ? Justifiez.
+# Reponse : 
+# Non car au vu du nombre de features dans notre jeu de donnees qui affecte l'etiquette 
+# nous ne pouvons pas les reduire a seulement 2 compantes principales
+
+
+model_lr_pca = LinearRegression()
+
+model_lr_pca.fit(X_train_pca , y_train)
+
+print(f"PCA : {r2_score(y_test ,model_lr_pca.predict(X_test_pca))}")
+print(f"------------------------------")
+
+# Question : Que constatez-vous ?
+# nous constatons que la pca na pas augmenter la precision de notre modele 
+
+matrice_corr = merged_df.corr()
+# print(matrice_corr['Prix'])
+
+#L'attribut qui renseigne le plus sur le prix est Surface
+
+merged_df = merged_df.drop(columns=['latitude','longitude','NbPieces','DPE_A','DPE_B','DPE_C','DPE_E','DPE_F','Type_Appartement','Type_Maison'])
+
+data = merged_df.loc[:,merged_df.columns != "Prix"]
+target = merged_df["Prix"]
+X_train, X_test, y_train, y_test = train_test_split(data , target, train_size=0.75, random_state=49)
+model = LinearRegression()
+model.fit(X_train , y_train)
+print(f"Apres Correlation : {r2_score(y_test ,model.predict(X_test))}")
+
+
+# Nous constatons une légère diminution du score, car nous avons supprimé 
+# certaines données et conservé uniquement celles qui étaient les plus pertinentes.
+# C'est pourquoi le score a baissé légèrement, mais pas de manière significative.
